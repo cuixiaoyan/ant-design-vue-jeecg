@@ -23,6 +23,20 @@
             </a-col>
           </span>
 
+          <a-col :md="6" :sm="24">
+
+            <template v-if="superQueryFlag">
+              <a-tooltip title="已有高级查询条件生效!">
+                <button :disabled="false" class="ant-btn ant-btn-primary" @click="superQuery">
+                  <a-icon type="appstore" theme="twoTone" spin="true"></a-icon>
+                  <span>高级查询</span>
+                </button>
+              </a-tooltip>
+            </template>
+            <a-button v-else type="primary" @click="superQuery" icon="filter">高级查询</a-button>
+
+          </a-col>
+
 
         </a-row>
       </a-form>
@@ -52,6 +66,11 @@
       <div class="ant-alert ant-alert-info" style="margin-bottom: 16px;">
         <i class="anticon anticon-info-circle ant-alert-icon"></i> 已选择 <a style="font-weight: 600">{{ selectedRowKeys.length }}</a>项
         <a style="margin-left: 24px" @click="onClearSelected">清空</a>
+
+        <span style="float:right;">
+          <a @click="loadData()"><a-icon type="sync" />刷新</a>
+        </span>
+
       </div>
 
 
@@ -68,6 +87,14 @@
         :loading="loading"
         :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
         @change="handleTableChange">
+
+        //加载活动图片
+        <template slot="avatarslot" slot-scope="text, record, index">
+          <div class="anty-img-wrap">
+            <a-avatar shape="square" :src="getAvatarView(record.avatar)" icon="user"/>
+          </div>
+        </template>
+
 
         <div slot="filterDropdown">
           <a-card>
@@ -123,6 +150,11 @@
     </div>
 
     <publishingActivities-modal ref="modalForm" @ok="modalFormOk"></publishingActivities-modal>
+
+
+    <!-- 高级查询区域 -->
+    <j-super-query :fieldList="fieldList" ref="superQueryModal" @handleSuperQuery="handleSuperQuery"></j-super-query>
+
   </a-card>
 </template>
 
@@ -130,26 +162,53 @@
 
   import { JeecgListMixin } from '@/mixins/JeecgListMixin'
   import PublishingActivitiesModal from './modules/PublishingActivitiesModal'
-  //数据字典模块
-  import {initDictOptions, filterDictText} from '@/components/dict/JDictSelectUtil'
   //自定义列 需要的 大坑
   import Vue from 'vue'
 
+  import {putAction} from '@/api/manage';
+  import {frozenBatch} from '@/api/api'
+  //高级查询 区域
+  import JSuperQuery from '@/components/jeecg/JSuperQuery.vue';
+
+  //引入自定义排序
+  import { filterObj } from '@/utils/util';
+
+
+  //高级查询modal需要参数
+  const superQueryFieldList=[{
+    type:"string",
+    value:"telephone",
+    text:"手机号"
+  },{
+    type:"int",
+    value:"number",
+    text:"参与人数"
+  }]
+
   export default {
     name: "PublishingActivitiesList",
-    mixins:[JeecgListMixin],
+    mixins: [JeecgListMixin],
     components: {
       PublishingActivitiesModal,
+      JSuperQuery,
     },
-    data () {
+    data() {
       return {
-        //字典数组缓存 活动类型
-        acttypeDictOptions: [],
         description: '发布活动管理页面',
+
+        // 筛选列查询条件
+        queryParam: {
+          ipInfo:'',
+          logType:'1',
+          keyWord:'',
+        },
+        tabKey: "1",
+
+
         //表头
-        columns:[],
+        columns: [],
         //列设置
-        settingColumns:[],
+        settingColumns: [],
         //列定义
         defColumns: [
           {
@@ -158,48 +217,55 @@
             key: 'rowIndex',
             width: 60,
             align: "center",
-            customRender: function (t, r, index) {
+            customRender: function(t, r, index) {
               return parseInt(index) + 1;
             }
           },
           {
-            title:'活动名称',
-            align:"center",
+            title: '活动名称',
+            align: "center",
             dataIndex: 'activities'
           },
+          //
           {
-            title:'开始时间',
-            align:"center",
+            title: '活动图片',
+            align: "center",
+            width: 120,
+            dataIndex: 'avatar',
+            scopedSlots: { customRender: "avatarslot" }
+          },
+
+          {
+            title: '开始时间',
+            align: "center",
             dataIndex: 'starttime'
           },
           {
-            title:'结束时间',
-            align:"center",
+            title: '结束时间',
+            align: "center",
             dataIndex: 'endtime'
           },
           {
-            title:'责任人',
-            align:"center",
-            dataIndex: 'personliable'
+            title: '责任人',
+            align: "center",
+            dataIndex: 'personliable_dictText'
           },
           {
-            title:'活动类型',
-            align:"center",
-            dataIndex: 'acttype',
-            customRender: (text) => {
-              //字典值替换通用方法
-              return filterDictText(this.acttypeDictOptions, text);
-            }
+            title: '活动类型',
+            align: "center",
+            dataIndex: 'acttype_dictText',
 
           },
           {
-            title:'参与人数',
-            align:"center",
-            dataIndex: 'number'
+            title: '参与人数',
+            align: "center",
+            dataIndex: 'number',
+            //自定义筛选
+            sorter: true
           },
           {
-            title:'电话号码',
-            align:"center",
+            title: '电话号码',
+            align: "center",
             dataIndex: 'telephone'
           },
           {
@@ -209,90 +275,102 @@
             scopedSlots: {
               filterDropdown: 'filterDropdown',
               filterIcon: 'filterIcon',
-              customRender: 'action'},
+              customRender: 'action'
+            },
           }
         ],
         url: {
+          //获取图片的路径
+          imgerver: window._CONFIG['domianURL'] + "/sys/common/view",
+
           list: "/activities/publishingActivities/list",
           delete: "/activities/publishingActivities/delete",
           deleteBatch: "/activities/publishingActivities/deleteBatch",
           exportXlsUrl: "/activities/publishingActivities/exportXls",
           importExcelUrl: "activities/publishingActivities/importExcel",
         },
-        dictOptions:{
-        } 
+        fieldList:superQueryFieldList,
+        dictOptions: {}
       }
     },
     computed: {
-      importExcelUrl: function(){
+      importExcelUrl: function() {
         return `${window._CONFIG['domianURL']}/${this.url.importExcelUrl}`;
       },
     },
 
 
 
+      methods: {
 
-    methods: {
-      initDictConfig(){
-        //初始化字典 - 活动类型
-        initDictOptions('acttype').then((res) => {
-          if (res.success) {
-            this.acttypeDictOptions = res.result;
-          }
-        });
-      },
-      //列设置更改事件
-      onColSettingsChange (checkedValues) {
-        var key = this.$route.name+":colsettings";
-        Vue.ls.set(key, checkedValues, 7 * 24 * 60 * 60 * 1000)
-        this.settingColumns = checkedValues;
-        const cols = this.defColumns.filter(item => {
-          if(item.key =='rowIndex'|| item.dataIndex=='action'){
-            return true
-          }
-          if (this.settingColumns.includes(item.dataIndex)) {
-            return true
-          }
-          return false
-        })
-        this.columns =  cols;
-      },
-      initColumns(){
-        //权限过滤（列权限控制时打开，修改第二个参数为授权码前缀）
-        //this.defColumns = colAuthFilter(this.defColumns,'testdemo:');
+        //设置列自动筛选
+        getQueryParams(){
+          var param = Object.assign({}, this.queryParam,this.isorter);
+          param.field = this.getQueryField();
+          param.pageNo = this.ipagination.current;
+          param.pageSize = this.ipagination.pageSize;
+          return filterObj(param);
+        },
 
-        var key = this.$route.name+":colsettings";
-        let colSettings= Vue.ls.get(key);
-        if(colSettings==null||colSettings==undefined){
-          let allSettingColumns = [];
-          this.defColumns.forEach(function (item,i,array ) {
-            allSettingColumns.push(item.dataIndex);
-          })
-          this.settingColumns = allSettingColumns;
-          this.columns = this.defColumns;
-        }else{
-          this.settingColumns = colSettings;
+
+       //获取图片
+        getAvatarView: function(avatar) {
+          return this.url.imgerver + "/" + avatar;
+        },
+
+        //列设置更改事件
+        onColSettingsChange(checkedValues) {
+          var key = this.$route.name + ":colsettings";
+          Vue.ls.set(key, checkedValues, 7 * 24 * 60 * 60 * 1000)
+          this.settingColumns = checkedValues;
           const cols = this.defColumns.filter(item => {
-            if(item.key =='rowIndex'|| item.dataIndex=='action'){
-              return true;
+            if (item.key == 'rowIndex' || item.dataIndex == 'action') {
+              return true
             }
-            if (colSettings.includes(item.dataIndex)) {
-              return true;
+            if (this.settingColumns.includes(item.dataIndex)) {
+              return true
             }
-            return false;
+            return false
           })
-          this.columns =  cols;
+          this.columns = cols;
+        },
+        initColumns() {
+          //权限过滤（列权限控制时打开，修改第二个参数为授权码前缀）
+          //this.defColumns = colAuthFilter(this.defColumns,'testdemo:');
+
+          var key = this.$route.name + ":colsettings";
+          let colSettings = Vue.ls.get(key);
+          if (colSettings == null || colSettings == undefined) {
+            let allSettingColumns = [];
+            this.defColumns.forEach(function(item, i, array) {
+              allSettingColumns.push(item.dataIndex);
+            })
+            this.settingColumns = allSettingColumns;
+            this.columns = this.defColumns;
+          } else {
+            this.settingColumns = colSettings;
+            const cols = this.defColumns.filter(item => {
+              if (item.key == 'rowIndex' || item.dataIndex == 'action') {
+                return true;
+              }
+              if (colSettings.includes(item.dataIndex)) {
+                return true;
+              }
+              return false;
+            })
+            this.columns = cols;
+          }
         }
-      }
 
 
-  },
+      },
 
-    created() {
-      this.initColumns();
-    },
+      created() {
+        this.initColumns();
+      },
 
-  }
+    }
+
 </script>
 <style scoped>
   @import '~@assets/less/common.less';
