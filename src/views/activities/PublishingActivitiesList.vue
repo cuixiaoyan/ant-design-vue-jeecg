@@ -28,7 +28,7 @@
             <template v-if="superQueryFlag">
               <a-tooltip title="已有高级查询条件生效!">
                 <button :disabled="false" class="ant-btn ant-btn-primary" @click="superQuery">
-                  <a-icon type="appstore" theme="twoTone" spin="true"></a-icon>
+                  <a-icon type="appstore" theme="twoTone" :spin="true" ></a-icon>
                   <span>高级查询</span>
                 </button>
               </a-tooltip>
@@ -171,7 +171,7 @@
   import JSuperQuery from '@/components/jeecg/JSuperQuery.vue';
 
   //引入自定义排序
-  import { filterObj } from '@/utils/util';
+  //import { filterObj } from '@/utils/util';
 
 
   //高级查询modal需要参数
@@ -196,13 +196,13 @@
       return {
         description: '发布活动管理页面',
 
-        // 筛选列查询条件
-        queryParam: {
-          ipInfo:'',
-          logType:'1',
-          keyWord:'',
-        },
-        tabKey: "1",
+        // 筛选列查询条件 会和高级查询起冲突
+        // queryParam: {
+        //   ipInfo:'',
+        //   logType:'1',
+        //   keyWord:'',
+        // },
+        // tabKey: "1",
 
 
         //表头
@@ -226,7 +226,7 @@
             align: "center",
             dataIndex: 'activities'
           },
-          //
+
           {
             title: '活动图片',
             align: "center",
@@ -261,7 +261,7 @@
             align: "center",
             dataIndex: 'number',
             //自定义筛选
-            sorter: true
+            //sorter: true,
           },
           {
             title: '电话号码',
@@ -290,7 +290,7 @@
           importExcelUrl: "activities/publishingActivities/importExcel",
         },
         fieldList:superQueryFieldList,
-        dictOptions: {}
+        //dictOptions: {}
       }
     },
     computed: {
@@ -303,14 +303,14 @@
 
       methods: {
 
-        //设置列自动筛选
-        getQueryParams(){
-          var param = Object.assign({}, this.queryParam,this.isorter);
-          param.field = this.getQueryField();
-          param.pageNo = this.ipagination.current;
-          param.pageSize = this.ipagination.pageSize;
-          return filterObj(param);
-        },
+        //设置列自动筛选 会和高级查询起冲突
+        // getQueryParams(){
+        //   var param = Object.assign({}, this.queryParam,this.isorter);
+        //   param.field = this.getQueryField();
+        //   param.pageNo = this.ipagination.current;
+        //   param.pageSize = this.ipagination.pageSize;
+        //   return filterObj(param);
+        // },
 
 
        //获取图片
