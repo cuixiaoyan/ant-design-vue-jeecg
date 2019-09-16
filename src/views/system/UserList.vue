@@ -117,7 +117,9 @@
         </template>
 
         <span slot="action" slot-scope="text, record">
-          <a @click="handleEdit(record)" v-has="'user:edit'">编辑</a>
+
+          <a @click="handleEdit(record)">编辑</a>
+          <a-divider type="vertical"/>
 
           <a-divider type="vertical" v-has="'user:edit'"/>
 
@@ -139,6 +141,10 @@
                   <a>删除</a>
                 </a-popconfirm>
               </a-menu-item>
+
+<!--              <a-menu-item>-->
+<!--                <a @click="handleEdit(record)">编辑</a>-->
+<!--              </a-menu-item>-->
 
               <a-menu-item v-if="record.status==1">
                 <a-popconfirm title="确定冻结吗?" @confirm="() => handleFrozen(record.id,2,record.username)">
@@ -356,6 +362,15 @@
       handleChangePassword(username) {
         this.$refs.passwordmodal.show(username);
       },
+
+      //编辑用户
+      handleEdit: function (record) {
+        this.$refs.modalForm.title = "编辑";
+        this.$refs.modalForm.departDisabled = true;
+        this.$refs.modalForm.disableSubmit = false;
+        this.$refs.modalForm.edit(record);
+      },
+
       handleAgentSettings(username){
         this.$refs.sysUserAgentModal.agentSettings(username);
         this.$refs.sysUserAgentModal.title = "用户代理人设置";
@@ -368,5 +383,5 @@
   }
 </script>
 <style scoped>
-  @import '~@assets/less/common.less'
+  @import '~@assets/less/common.less';
 </style>

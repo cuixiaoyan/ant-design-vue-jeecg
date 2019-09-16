@@ -215,7 +215,7 @@
         dictOptions:{
          activity:[],
          department:[],
-        } 
+        }
       }
     },
     computed: {

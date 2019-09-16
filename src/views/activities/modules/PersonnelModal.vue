@@ -44,6 +44,14 @@
         <a-form-item label="活动地区" :labelCol="labelCol" :wrapperCol="wrapperCol">
           <a-input v-decorator="[ 'region', validatorRules.region]" placeholder="请输入活动地区"></a-input>
         </a-form-item>
+
+
+<!--                <a-form-item label="活动地区" :labelCol="labelCol" :wrapperCol="wrapperCol">-->
+<!--                  <a-cascader :options="options"  :displayRender="displayRender" expandTrigger="hover" @change="onChange" placeholder="选择活动地区" />-->
+<!--                </a-form-item>-->
+
+
+
           
 
         <a-form-item label="提醒时间" :labelCol="labelCol" :wrapperCol="wrapperCol">
@@ -74,7 +82,10 @@
 
   //搜索下拉
   import JSearchSelectTag from '@/components/dict/JSearchSelectTag'
-  
+
+
+
+
   export default {
     name: "PersonnelModal",
     components: { 
@@ -84,12 +95,44 @@
       JSearchSelectTag,
     },
     data () {
+
       return {
+
+
+            options: [{
+              value: '1',
+              label: '河南',
+              children: [{
+                value: '2',
+                label: '焦作',
+                children: [{
+                  value: '3',
+                  label: '武陟',
+                }],
+              }],
+            }, {
+              value: '10',
+              label: '上海',
+              //设置是否禁用
+              disabled: true,
+              children: [{
+                value: '20',
+                label: '宝山',
+                children: [{
+                  value: '30',
+                  label: '庙行',
+                }],
+              }],
+            }],
+
+
         form: this.$form.createForm(this),
         title:"操作",
         width:800,
         visible: false,
         model: {},
+
+
         labelCol: {
           xs: { span: 24 },
           sm: { span: 5 },
@@ -153,7 +196,11 @@
               httpurl+=this.url.edit;
                method = 'put';
             }
+
             let formData = Object.assign(this.model, values);
+
+            formData.region = formData.region.toString();
+
             console.log("表单提交数据",formData)
             httpAction(httpurl,formData,method).then((res)=>{
               if(res.success){
@@ -175,6 +222,13 @@
       },
       popupCallback(row){
         this.form.setFieldsValue(pick(row,'name','phone','member','number','activity','region','remindertime','department'))
+      },
+
+      onChange(value) {
+        // console.log(value.toString());
+      },
+      displayRender({ labels }) {
+        return labels[labels.length - 1];
       },
 
       //手机号码校验
