@@ -122,7 +122,7 @@
         activities:{
           rules: [
             { required: true, message: '请输入活动名称!'},
-            { min: 0, max: 5, message: '长度不超过 10 个字符', trigger: 'blur' },
+            { min: 0, max: 10, message: '长度不超过 10 个字符', trigger: 'blur' },
             { validator: this.validateRoleCode}
           ]},
         starttime:{},
