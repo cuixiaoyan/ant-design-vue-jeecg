@@ -26,18 +26,41 @@
           <j-dict-select-tag type="list" v-decorator="['level']" :trigger-change="true" dictCode="level" placeholder="请选择级别"/>
         </a-form-item>
           
+
+
         <a-form-item label="照片" :labelCol="labelCol" :wrapperCol="wrapperCol">
-          <j-upload v-decorator="['photo']" :trigger-change="true"></j-upload>
+          <a-upload
+            listType="picture-card"
+            class="avatar-uploader"
+            :showUploadList="false"
+            :action="uploadAction"
+            :data="{'isup':1}"
+            :headers="headers"
+            :beforeUpload="beforeUpload"
+            @change="handleChange"
+          >
+            <img v-if="picUrl" :src="getAvatarView()" alt="照片" style="height:104px;max-width:300px"/>
+            <div v-else>
+              <a-icon :type="uploadLoading ? 'loading' : 'plus'" />
+              <div class="ant-upload-text">点击上传</div>
+            </div>
+          </a-upload>
         </a-form-item>
           
         <a-form-item label="资格证" :labelCol="labelCol" :wrapperCol="wrapperCol">
           <j-upload v-decorator="['qualificationsphoto']" :trigger-change="true"></j-upload>
         </a-form-item>
           
-        <a-form-item label="简介" :labelCol="labelCol" :wrapperCol="wrapperCol">
-          <a-input v-decorator="[ 'resume', validatorRules.resume]" placeholder="请输入简介"></a-input>
+
+        <a-form-item
+          :labelCol="labelCol"
+          :wrapperCol="wrapperCol"
+          label="简介">
+          <j-editor v-decorator="[ 'resume', {} ]" triggerChange></j-editor>
         </a-form-item>
-          
+
+
+
         
       </a-form>
     </a-spin>
@@ -51,6 +74,16 @@
   import JDate from '@/components/jeecg/JDate'  
   import JUpload from '@/components/jeecg/JUpload'
   import JDictSelectTag from "@/components/dict/JDictSelectTag"
+  //富文本编辑器
+  import JEditor from '@/components/jeecg/JEditor'
+
+  //图片框
+  import moment from 'moment'
+  import { getAction } from '@/api/manage'
+  import {addUser,editUser,queryUserRole,queryall } from '@/api/api'
+  import { disabledAuthFilter } from "@/utils/authFilter"
+  import Vue from 'vue'
+  import {ACCESS_TOKEN} from "@/store/mutation-types"
   
   export default {
     name: "PetDoctorModal",
@@ -58,6 +91,7 @@
       JDate,
       JUpload,
       JDictSelectTag,
+      JEditor,
     },
     data () {
       return {
@@ -84,22 +118,53 @@
         photo:{},
         qualificationsphoto:{},
         resume:{},
+
+          //图片框
+          headers:{},
+          uploadLoading:false,
+          confirmLoading: false,
+          picUrl: "",
+
+
+
         },
         url: {
           add: "/doctors/petDoctor/add",
           edit: "/doctors/petDoctor/edit",
+
+          //图片框 上传文件和图片所调用的接口
+          fileUpload: window._CONFIG['domianURL']+"/sys/common/upload",
+          imgerver: window._CONFIG['domianURL']+"/sys/common/view",
         }
      
       }
     },
+
     created () {
+      const token = Vue.ls.get(ACCESS_TOKEN);
+      this.headers = {"X-Access-Token":token}
+
     },
+    computed:{
+      uploadAction:function () {
+        return this.url.fileUpload;
+      }
+    },
+
+
     methods: {
       add () {
+        //不想图片没有 就加这个
+        this.picUrl = "";
+
         this.edit({});
       },
       edit (record) {
         this.form.resetFields();
+
+        //不想图片没有 就加这个
+        this.picUrl = "Has no pic url yet";
+
         this.model = Object.assign({}, record);
         this.visible = true;
         this.$nextTick(() => {
@@ -116,6 +181,10 @@
         this.form.validateFields((err, values) => {
           if (!err) {
             that.confirmLoading = true;
+
+            //在这里替换一下图片 保存到后台数据库
+            let photo = that.model.photo;
+
             let httpurl = '';
             let method = '';
             if(!this.model.id){
@@ -126,6 +195,8 @@
                method = 'put';
             }
             let formData = Object.assign(this.model, values);
+            formData.photo = photo;
+
             console.log("表单提交数据",formData)
             httpAction(httpurl,formData,method).then((res)=>{
               if(res.success){
@@ -142,6 +213,40 @@
          
         })
       },
+
+      //图片上传方法
+      beforeUpload: function(file){
+        var fileType = file.type;
+        if(fileType.indexOf('image')<0){
+          this.$message.warning('请上传图片');
+          return false;
+        }
+        //TODO 验证文件大小
+      },
+      handleChange (info) {
+        this.picUrl = "";
+        if (info.file.status === 'uploading') {
+          this.uploadLoading = true;
+          return
+        }
+        if (info.file.status === 'done') {
+          var response = info.file.response;
+          this.uploadLoading = false;
+          console.log(response);
+          if(response.success){
+            this.model.photo = response.message;
+            this.picUrl = "Has no pic url yet";
+          }else{
+            this.$message.warning(response.message);
+          }
+        }
+      },
+      //获取图片
+      getAvatarView(){
+        return this.url.imgerver +"/"+ this.model.photo;
+      },
+
+
       handleCancel () {
         this.close()
       },
@@ -152,3 +257,37 @@
     }
   }
 </script>
+
+<style scoped>
+  .avatar-uploader > .ant-upload {
+    width:104px;
+    height:104px;
+  }
+  .ant-upload-select-picture-card i {
+    font-size: 49px;
+    color: #999;
+  }
+
+  .ant-upload-select-picture-card .ant-upload-text {
+    margin-top: 8px;
+    color: #666;
+  }
+
+  .ant-table-tbody .ant-table-row td{
+    padding-top:10px;
+    padding-bottom:10px;
+  }
+
+  .drawer-bootom-button {
+    position: absolute;
+    bottom: -8px;
+    width: 100%;
+    border-top: 1px solid #e8e8e8;
+    padding: 10px 16px;
+    text-align: right;
+    left: 0;
+    background: #fff;
+    border-radius: 0 0 2px 2px;
+  }
+</style>
+
