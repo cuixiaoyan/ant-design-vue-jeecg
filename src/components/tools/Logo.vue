@@ -21,7 +21,7 @@
     props: {
       title: {
         type: String,
-        default: '嘿嘿',
+        default: '崔笑颜学习系统',
         required: false
       },
       showTitle: {

@@ -10,7 +10,7 @@
     <a-spin :spinning="confirmLoading">
       <a-form :form="form">
 
-        <a-form-item label="名字" :labelCol="labelCol" :wrapperCol="wrapperCol">
+        <a-form-item label="名字" :labelCol="labelCol" :wrapperCol="wrapperCol" hasFeedback>
           <a-input v-decorator="[ 'name', validatorRules.name]" placeholder="请输入名字"></a-input>
         </a-form-item>
           
@@ -18,7 +18,7 @@
           <j-date placeholder="请选择工作年限" v-decorator="[ 'workinglife', validatorRules.workinglife]" :trigger-change="true" style="width: 100%"/>
         </a-form-item>
           
-        <a-form-item label="手机号" :labelCol="labelCol" :wrapperCol="wrapperCol">
+        <a-form-item label="手机号" :labelCol="labelCol" :wrapperCol="wrapperCol" hasFeedback>
           <a-input v-decorator="[ 'iphone', validatorRules.iphone]" placeholder="请输入手机号"></a-input>
         </a-form-item>
           
@@ -84,6 +84,10 @@
   import { disabledAuthFilter } from "@/utils/authFilter"
   import Vue from 'vue'
   import {ACCESS_TOKEN} from "@/store/mutation-types"
+
+  //排重接口
+  import { duplicateCheck } from '@/api/api'
+
   
   export default {
     name: "PetDoctorModal",
@@ -111,9 +115,13 @@
 
         confirmLoading: false,
         validatorRules:{
-        name:{},
+        name:{ rules: [
+            { required: true, message: '请输入名称!'},
+            { min: 0, max: 10, message: '长度不超过 10 个字符', trigger: 'blur' },
+            { validator: this.validateRoleCode}
+          ]},
         workinglife:{},
-        iphone:{},
+        iphone:{rules: [{ required: true, message: '请输入手机号!'},{validator: this.validatePhone}]},
         level:{},
         photo:{},
         qualificationsphoto:{},
@@ -252,7 +260,60 @@
       },
       popupCallback(row){
         this.form.setFieldsValue(pick(row,'name','workinglife','iphone','level','photo','qualificationsphoto','resume'))
-      }
+      },
+      //手机号码校验
+      validatePhone(rule, value, callback){
+        if(!value){
+          callback()
+        }else{
+          if(new RegExp(/^1[3|4|5|7|8][0-9]\d{8}$/).test(value)){
+            var params = {
+              tableName: 'sys_user',
+              fieldName: 'phone',
+              fieldVal: value,
+              dataId: this.userId
+            };
+            duplicateCheck(params).then((res) => {
+              if (res.success) {
+                callback()
+              } else {
+                //可以存入相同的手机号 因为不是用户非要限制唯一的手机号码
+                callback()
+                //callback("手机号已存在!")
+              }
+            })
+          }else{
+            callback("请输入正确格式的手机号码!");
+          }
+        }
+      },
+
+      //唯一性校验规则
+      validateRoleCode(rule, value, callback){
+        // if(/[\u4E00-\u9FA5]/g.test(value)){
+        //   callback("角色编码不可输入汉字!");
+        // }else{
+        var params = {
+          //表名
+          tableName: "petDoctor",
+          //字段名
+          fieldName: "name",
+          fieldVal: value,
+          //表的id
+          dataId: this.model.id,
+        };
+        duplicateCheck(params).then((res)=>{
+          if(res.success){
+            callback();
+          }else{
+            callback(res.message);
+          }
+        });
+        // }
+      },
+
+
+
       
     }
   }

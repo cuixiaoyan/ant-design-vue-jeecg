@@ -153,14 +153,8 @@
           {
             title:'级别',
             align:"center",
-            dataIndex: 'level',
-            customRender:(text)=>{
-              if(!text){
-                return ''
-              }else{
-                return filterMultiDictText(this.dictOptions['level'], text+"")
-              }
-            }
+            dataIndex: 'level_dictText',
+
           },
           {
             title:'照片',
@@ -193,9 +187,7 @@
           exportXlsUrl: "/doctors/petDoctor/exportXls",
           importExcelUrl: "doctors/petDoctor/importExcel",
         },
-        dictOptions:{
-         level:[],
-        } 
+
       }
     },
     computed: {
@@ -204,13 +196,7 @@
       }
     },
     methods: {
-      initDictConfig(){
-        initDictOptions('level').then((res) => {
-          if (res.success) {
-            this.$set(this.dictOptions, 'level', res.result)
-          }
-        })
-      }
+
        
     }
   }
