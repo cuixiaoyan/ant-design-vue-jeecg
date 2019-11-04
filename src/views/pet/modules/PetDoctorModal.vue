@@ -140,7 +140,7 @@
           add: "/doctors/petDoctor/add",
           edit: "/doctors/petDoctor/edit",
 
-          //图片框 上传文件和图片所调用的接口
+          //图片框 上传文件和图片所调用的接口 更新码云测试
           fileUpload: window._CONFIG['domianURL']+"/sys/common/upload",
           imgerver: window._CONFIG['domianURL']+"/sys/common/view",
         }
