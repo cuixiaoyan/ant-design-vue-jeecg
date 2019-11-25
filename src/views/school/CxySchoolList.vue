@@ -18,10 +18,10 @@
             <span style="float: left;overflow: hidden;" class="table-page-search-submitButtons">
               <a-button type="primary" @click="searchQuery" icon="search">查询</a-button>
               <a-button type="primary" @click="searchReset" icon="reload" style="margin-left: 8px">重置</a-button>
-              <a @click="handleToggleSearch" style="margin-left: 8px">
-                {{ toggleSearchStatus ? '收起' : '展开' }}
-                <a-icon :type="toggleSearchStatus ? 'up' : 'down'"/>
-              </a>
+<!--              <a @click="handleToggleSearch" style="margin-left: 8px">-->
+<!--                {{ toggleSearchStatus ? '收起' : '展开' }}-->
+<!--                <a-icon :type="toggleSearchStatus ? 'up' : 'down'"/>-->
+<!--              </a>-->
             </span>
           </a-col>
 
@@ -29,12 +29,12 @@
       </a-form>
     </div>
     <!-- 查询区域-END -->
-    
+
     <!-- 操作按钮区域 -->
     <div class="table-operator">
       <a-button @click="handleAdd" type="primary" icon="plus">新增</a-button>
       <a-button type="primary" icon="download" @click="handleExportXls('学校表')">导出</a-button>
-      <a-upload name="file" :showUploadList="false" :multiple="false" :action="importExcelUrl" @change="handleImportExcel">
+      <a-upload name="file" :headers="tokenHeader" :showUploadList="false" :multiple="false" :action="importExcelUrl" @change="handleImportExcel">
         <a-button type="primary" icon="import">导入</a-button>
       </a-upload>
       <a-dropdown v-if="selectedRowKeys.length > 0">
@@ -63,7 +63,7 @@
         :loading="loading"
         :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
         @change="handleTableChange">
-        
+
         <template slot="imgSlot" slot-scope="text">
           <span v-if="!text" style="font-size: 12px;font-style: italic;">无此图片</span>
           <img v-else :src="getImgView(text)" height="25px" alt="图片不存在" style="max-width:80px;font-size: 12px;font-style: italic;"/>
@@ -120,7 +120,7 @@
         // 表头
         columns: [
           {
-            title: '#',
+            title: '编号',
             dataIndex: '',
             key:'rowIndex',
             width:60,
@@ -134,26 +134,26 @@
             align:"center",
             dataIndex: 'name'
           },
-          {
-            title:'最低年级',
-            align:"center",
-            dataIndex: 'startGrade'
-          },
-          {
-            title:'最高年级',
-            align:"center",
-            dataIndex: 'endGrade'
-          },
-          {
-            title:'地区',
-            align:"center",
-            dataIndex: 'regionId'
-          },
-          {
-            title:'官网',
-            align:"center",
-            dataIndex: 'website'
-          },
+          // {
+          //   title:'最低年级',
+          //   align:"center",
+          //   dataIndex: 'startGrade'
+          // },
+          // {
+          //   title:'最高年级',
+          //   align:"center",
+          //   dataIndex: 'endGrade'
+          // },
+          // {
+          //   title:'地区',
+          //   align:"center",
+          //   dataIndex: 'regionId'
+          // },
+          // {
+          //   title:'官网',
+          //   align:"center",
+          //   dataIndex: 'website'
+          // },
           {
             title:'联系电话',
             align:"center",
@@ -162,54 +162,54 @@
           {
             title:'联系人',
             align:"center",
-            dataIndex: 'contacts'
+            dataIndex: 'contacts_dictText'
           },
           {
             title:'地址',
             align:"center",
             dataIndex: 'address'
           },
-          {
-            title:'邮政编码',
-            align:"center",
-            dataIndex: 'postCode'
-          },
+          // {
+          //   title:'邮政编码',
+          //   align:"center",
+          //   dataIndex: 'postCode'
+          // },
           {
             title:'图片',
             align:"center",
             dataIndex: 'pic',
             scopedSlots: {customRender: 'imgSlot'}
           },
-          {
-            title:'简介',
-            align:"center",
-            dataIndex: 'introduce'
-          },
-          {
-            title:'备注',
-            align:"center",
-            dataIndex: 'remarks'
-          },
-          {
-            title:'文件存储名字',
-            align:"center",
-            dataIndex: 'bucket'
-          },
+          // {
+          //   title:'简介',
+          //   align:"center",
+          //   dataIndex: 'introduce'
+          // },
+          // {
+          //   title:'备注',
+          //   align:"center",
+          //   dataIndex: 'remarks'
+          // },
+          // {
+          //   title:'文件存储名字',
+          //   align:"center",
+          //   dataIndex: 'bucket'
+          // },
           {
             title:'类别',
             align:"center",
-            dataIndex: 'schoolType'
+            dataIndex: 'schoolType_dictText'
           },
-          {
-            title:'唯一标示',
-            align:"center",
-            dataIndex: 'schoolSign'
-          },
-          {
-            title:'学校状态',
-            align:"center",
-            dataIndex: 'status'
-          },
+          // {
+          //   title:'唯一标示',
+          //   align:"center",
+          //   dataIndex: 'schoolSign'
+          // },
+          // {
+          //   title:'学校状态',
+          //   align:"center",
+          //   dataIndex: 'status'
+          // },
           {
             title: '操作',
             dataIndex: 'action',
@@ -225,7 +225,7 @@
           importExcelUrl: "school/cxySchool/importExcel",
         },
         dictOptions:{
-        } 
+        }
       }
     },
     computed: {
@@ -236,10 +236,10 @@
     methods: {
       initDictConfig(){
       }
-       
+
     }
   }
 </script>
 <style scoped>
-  @import '~@assets/less/common.less'
+  @import '~@assets/less/common.less';
 </style>
